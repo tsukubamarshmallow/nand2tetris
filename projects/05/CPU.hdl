@@ -33,4 +33,40 @@ CHIP CPU {
 
     PARTS:
     //// Replace this comment with your code.
+    /// ALUの出力結果
+    
+    // ARgisterの書き込み
+    Mux16(a=instruction, b=ALUout, sel=instruction[15], out=Mux1out);
+    Not(in=instruction[15], out=noti15);
+    Or (a=instruction[5], b=noti15, out=loadA);
+    ARegister(in=Mux1out, load=loadA, out=Aout,out[0..14]=addressM);
+    // DRegisterの書き込み
+    And (a=instruction[4], b=instruction[15], out=loadD);
+    DRegister(in=ALUout, load=loadD, out=Dout);
+    // ALU入力のA/Mの選択
+    Mux16(a=Aout, b=inM, sel=instruction[12], out=AMout);
+    // ALU演算
+    ALU(x=Dout, y=AMout, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=ALUout,out=outM, zr=zrout, ng=ngout);
+    // writeM
+    And(a=instruction[3], b=true, out=o1);
+    And(a=instruction[15], b=o1, out=writeM);
+    // pc
+    Not(in=ngout, out=notngout);
+    Not(in=zrout, out=notzrout,out = JNE);
+    And(a=notngout, b=notzrout, out=JGT);
+    Or(a=ngout, b=zrout, out=JLE);
+    Or(a=notngout, b=zrout, out=JGE);
+    And(a=ngout, b=notzrout, out=JLT);
+    Mux(a=false, b=JGT, sel=instruction[0], out=w1);
+    Mux(a=zrout, b=JGE, sel=instruction[0], out=w2);
+    Mux(a=JLT, b=JNE, sel=instruction[0], out=w3);
+    Mux(a=JLE, b=true, sel=instruction[0], out=w4);
+    Mux(a=w1, b=w2, sel=instruction[1], out=w5);
+    Mux(a=w3, b=w4, sel=instruction[1], out=w6);
+    Mux(a=w5, b=w6, sel=instruction[2], out=w7);
+    And (a=instruction[15], b=w7, out=loadPC);
+    PC(in=Aout, load=loadPC, inc=true, reset=reset, out[0..14]=pc);
+
+
+
 }
