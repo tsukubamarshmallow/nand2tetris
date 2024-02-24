@@ -406,12 +406,6 @@ int main(int argc, char *argv[]){
         }
     }
     while(std::getline(testModule2.file,testModule2.line));
-    /*
-    for(auto &[s,n] : ROMTable.table){
-        std::cout << s << "|" << n << std::endl;
-    }
-    */
-
-
+    
     return 0;
 }
