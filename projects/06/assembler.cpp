@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <bitset>
 #include <sstream>
+#include <vector>
+#include <utility>
 
 // = の前までの文字列を取得
 std::string extractLeftOfString(const std::string& input, const std::string& delimiter) {
@@ -14,7 +16,6 @@ std::string extractLeftOfString(const std::string& input, const std::string& del
     if (pos != std::string::npos) {
         return input.substr(0, pos);
     } else {
-        // delimiterが見つからない場合は、そのままの文字列を返すか、適切な処理を行う
         return input;
     }
 }
@@ -30,7 +31,7 @@ std::string extractRightOfString(const std::string& input, const std::string& de
         return input;
     }
 }
-
+// ストリング型が数のみから構成されているか判断する関数
 bool isNumber(const std::string& str) {
   for (char const& c : str) {
     if (std::isdigit(c) == 0) return false;
@@ -42,6 +43,7 @@ bool isNumber(const std::string& str) {
 bool ContainsSubstring(const std::string& mainString, const std::string& subString) {
     return mainString.find(subString) != std::string::npos;
 }
+
 
 class ParseModule{
    
@@ -64,6 +66,19 @@ class ParseModule{
             std::getline(file,line);
         }
     }
+
+    //ファイルから読み取った行に対して、先頭にspaceが存在すれば削除する
+    void trimSpace(){
+    int size = line.size();
+    int i = 0;
+    while(i < size){
+        if(line[0] == ' '){
+            line.erase(0,1);
+        }else{
+            break;
+        }
+    }
+}
 
     std::string commandType(){
         if(line[0] == '@'){
@@ -132,7 +147,10 @@ class ParseModule{
             return "JNE";
         }else if(ContainsSubstring(line, "JLE")){
             return "JLE";
-        }else{
+        }else if(ContainsSubstring(line,"JMP")){
+            return "JMP";
+        }
+        else{
             return "null";
         }
     }
@@ -156,7 +174,9 @@ class CodeModule{
             return "110";
         } else if (mnemonic == "AMD") {
             return "111";
-        } else {
+        } else if (mnemonic == "null"){
+            return "000";
+        }else {
             printf("Exeption Error Occurd in CodeModule-dest()function!");
             exit(EXIT_FAILURE);
         }
@@ -249,19 +269,108 @@ class CodeModule{
     }
 };
 
-int main(int argc, char *argv[]){
-    
-    class ParseModule testModule(argv[1]);
+class SymbolTable{
+    public:
+    std::vector<std::pair<std::string,int>> table;
 
-    std::ofstream ofs("output.txt");
+    SymbolTable(){
+        //コンストラクタ
+    }
+
+    void addEntry(std::string symbol,int address){
+        table.push_back(std::make_pair(symbol,address));
+    }
+
+    bool contains(std::string symbol){
+        for (auto &[c, n] : table) {
+            if(c == symbol){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::string getAddress(std::string symbol){
+        for (auto &[c, n] : table) {
+            if(c == symbol){
+                std::string binary = std::bitset<15>(n).to_string();
+                return "0" + binary;
+            }
+        }
+    }
+};
+
+int main(int argc, char *argv[]){
+
+    int rom_integer = 0;
+    
+    class ParseModule testModule1(argv[1]);
+
+    class SymbolTable RAMTable;
+
+    RAMTable.addEntry("SP",0);
+    RAMTable.addEntry("LCL",1);
+    RAMTable.addEntry("ARG",2);
+    RAMTable.addEntry("THIS",3);
+    RAMTable.addEntry("THAT",4);
+    RAMTable.addEntry("R0",0);
+    RAMTable.addEntry("R1",1);
+    RAMTable.addEntry("R2",2);
+    RAMTable.addEntry("R3",3);
+    RAMTable.addEntry("R4",4);
+    RAMTable.addEntry("R5",5);
+    RAMTable.addEntry("R6",6);
+    RAMTable.addEntry("R7",7);
+    RAMTable.addEntry("R8",8);
+    RAMTable.addEntry("R9",9);
+    RAMTable.addEntry("R10",10);
+    RAMTable.addEntry("R11",11);
+    RAMTable.addEntry("R12",12);
+    RAMTable.addEntry("R13",13);
+    RAMTable.addEntry("R14",14);
+    RAMTable.addEntry("R15",15);
+    RAMTable.addEntry("SCREEN",16384);
+    RAMTable.addEntry("KBD",24576);
+
+    class SymbolTable ROMTable;
+
+    std::ofstream ofs("test.hack");
+
+    // 1回目の構文解析では(Xxx)ラベルのシンボルテーブルを作成する
 
     do{
-        if(testModule.commandType() == "C_COMMAND"){
+        testModule1.trimSpace();
+        if(!testModule1.line.empty() && testModule1.line[testModule1.line.length() - 1] != '\n' && !ContainsSubstring(testModule1.line,"//")){
+            if(testModule1.commandType() == "L_COMMAND"){
+                std::string result = testModule1.line.erase(0,1);
+                result.erase(result.size()-1,1);
+                ROMTable.addEntry(result,rom_integer);
+            }else{
+                rom_integer++;
+            }
+            
+        }
+    }
+    while(std::getline(testModule1.file,testModule1.line));
+
+    printf("toriaezuok");
+    
+    //　2回目の構文解析ではシンボルテーブルを参照しながらバイナリコードへ変換していく
+
+    int ram_integer = 16;
+    
+    class ParseModule testModule2(argv[1]);
+
+    do{
+        testModule2.trimSpace();
+        if(!testModule2.line.empty() && testModule2.line[testModule2.line.length() - 1] != '\n' && !ContainsSubstring(testModule2.line,"//")){
+
+            if(testModule2.commandType() == "C_COMMAND"){
             //Parse-section
             std::string result;
-            std::string jump = testModule.jump();
-            std::string dest = testModule.dest();
-            std::string comp = testModule.comp();
+            std::string jump = testModule2.jump();
+            std::string dest = testModule2.dest();
+            std::string comp = testModule2.comp();
             //decode-section
             jump = CodeModule::jump(jump);
             dest = CodeModule::dest(dest);
@@ -270,24 +379,39 @@ int main(int argc, char *argv[]){
 
             ofs << result << std::endl;
 
-        }else if(testModule.commandType() == "A_COMMAND"){
-            std::string content = testModule.line.erase(0,1);
-            if(isNumber(content)){
-                int intValue;
-                std::istringstream(content) >> intValue;
-                std::string binary = std::bitset<15>(intValue).to_string();
-                std::cout << binary << std::endl;
-                ofs << "1" + binary << std::endl;
-            }else{
-                ofs << "@" + content << std::endl;
+            }else if(testModule2.commandType() == "A_COMMAND"){
+                std::string content = testModule2.line.erase(0,1);
+                if(isNumber(content)){
+                    int intValue;
+                    std::istringstream(content) >> intValue;
+                    std::string binary = std::bitset<15>(intValue).to_string();
+
+                    ofs << "0" + binary << std::endl;
+                }else{
+                    if(RAMTable.contains(content)){
+                        //　RAM定義済み
+                        ofs << RAMTable.getAddress(content) << std::endl;
+                    }else if(ROMTable.contains(content)){
+                        // ROM定義済み
+                        ofs << ROMTable.getAddress(content) << std::endl;
+                    }else{
+                        // 新変数
+                        RAMTable.addEntry(content,ram_integer);
+                        std::string binary = std::bitset<15>(ram_integer).to_string();
+                        ofs << "0" + binary << std::endl;
+                        ram_integer++;
+                    }
+                }
             }
-        }else if(testModule.commandType() == "L_COMMAND"){
-            ofs << testModule.line << std::endl;
         }
-        std::cout << testModule.commandType() << std::endl;
-        std::cout << testModule.line << std::endl;
     }
-    while(std::getline(testModule.file,testModule.line));
+    while(std::getline(testModule2.file,testModule2.line));
+    /*
+    for(auto &[s,n] : ROMTable.table){
+        std::cout << s << "|" << n << std::endl;
+    }
+    */
+
 
     return 0;
 }
