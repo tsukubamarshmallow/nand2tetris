@@ -146,8 +146,49 @@ C命令は(flag,comp(算術式),dest(評価された算術式の送り先),jump(
 学習終了　2024/04/20 4hour
 
 #### Code-write-moduleの実装
-・算術演算の結果はMに代入すれば良さそう？
-・ハードウェア上のスタック領域をどうやって割振るのか
+
+1.最も基礎的な算術演算の実装
+
+Hackアセンブリ言語上ではアドレス256からスタック領域が割り当てられているので、
+その領域を使用して算術論理演算を実行する。
+この際R0レジスタにはSPが保存されていると仮定する。
+binary-functionとsingle-functionではアセンブリ言語に少々差が出てくることに注意する。
+
+(ex)
+#### binary function
+push const arg1
+push const arg2
+command(binary function)
+
+↓
+
+@R0
+M = arg1
+@R0
+M = M + 1
+
+@R0
+M = arg2
+@R0
+M = M + 1
+
+@R0
+A = A - 1
+D = M
+@R0
+M = M - 1
+
+@R0
+A = A - 1
+M = (対応する演算内容)
+
+command(single function)
+↓
+
+@R0
+A = A - 1
+M = (対応する演算内容)
+
 
 
 
