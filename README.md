@@ -163,30 +163,50 @@ command(binary function)
 ↓
 
 @R0
+
 M = arg1
-@R0
-M = M + 1
 
 @R0
+
+M = M + 1
+
+
+@R0
+
 M = arg2
-@R0
-M = M + 1
 
 @R0
-A = A - 1
-D = M
+
+M = M + 1
+
+
 @R0
+
+A = A - 1
+
+D = M
+
+@R0
+
 M = M - 1
 
+
 @R0
+
 A = A - 1
+
 M = (対応する演算内容)
 
+
 command(single function)
+
 ↓
 
+
 @R0
+
 A = A - 1
+
 M = (対応する演算内容)
 
 
